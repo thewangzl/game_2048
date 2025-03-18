@@ -22,20 +22,6 @@ class GameLogic {
     initGame();
   }
 
-  void initGame() {
-    // 清空棋盘
-    for (int i = 0; i < boardSize; i++) {
-      for (int j = 0; j < boardSize; j++) {
-        board[i][j].value = 0;
-        board[i][j].merged = false;
-      }
-    }
-    score = 0;
-    
-    // 确保生成两个初始方块
-    addRandomTile();
-    addRandomTile();
-  }
 
   void addRandomTile() {
     List<Position> emptyPositions = [];
@@ -57,7 +43,19 @@ class GameLogic {
     board[pos.row][pos.col].value = random.nextDouble() < 0.9 ? 2 : 4;
   }
 
+  // 添加计时相关属性
+  DateTime? gameStartTime;
+  Duration gameTime = Duration.zero;
+  bool isTimerRunning = false;
+
+  // 在 move 方法开始处添加计时逻辑
   bool move(Direction direction) {
+    // 第一次移动时开始计时
+    if (gameStartTime == null) {
+      gameStartTime = DateTime.now();
+      isTimerRunning = true;
+    }
+
     bool moved = false;
     // 重置所有格子的合并状态
     for (var row in board) {
@@ -218,7 +216,53 @@ class GameLogic {
             !board[toRow][toCol].merged);
   }
 
+  // 添加计时相关方法
+  void stopTimer() {
+    if (isTimerRunning && gameStartTime != null) {
+      gameTime = DateTime.now().difference(gameStartTime!);
+      isTimerRunning = false;
+    }
+  }
+
+  String getFormattedTime() {
+    if (gameStartTime == null) return '00:00';
+    
+    Duration duration;
+    if (isTimerRunning) {
+      duration = DateTime.now().difference(gameStartTime!);
+    } else {
+      duration = gameTime;
+    }
+    
+    String twoDigits(int n) => n.toString().padLeft(2, '0');
+    String minutes = twoDigits(duration.inMinutes.remainder(60));
+    String seconds = twoDigits(duration.inSeconds.remainder(60));
+    return '$minutes:$seconds';
+  }
+
+  @override
+  void initGame() {
+    // 重置计时器
+    gameStartTime = null;
+    gameTime = Duration.zero;
+    isTimerRunning = false;
+    
+    // 清空棋盘
+    for (int i = 0; i < boardSize; i++) {
+      for (int j = 0; j < boardSize; j++) {
+        board[i][j].value = 0;
+        board[i][j].merged = false;
+      }
+    }
+    score = 0;
+    
+    // 确保生成两个初始方块
+    addRandomTile();
+    addRandomTile();
+  }
+
   bool isGameOver() {
+    bool gameOver = false;
     // 检查是否还有空格
     for (int i = 0; i < boardSize; i++) {
       for (int j = 0; j < boardSize; j++) {

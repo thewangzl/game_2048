@@ -1,11 +1,34 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../models/tile.dart';
 import '../providers/game_provider.dart';
 import '../models/game_logic.dart';
 
-class GameBoard extends StatelessWidget {
+class GameBoard extends StatefulWidget {
   const GameBoard({super.key});
+
+  @override
+  State<GameBoard> createState() => _GameBoardState();
+}
+
+class _GameBoardState extends State<GameBoard> {
+  Timer? _timer;
+
+  @override
+  void initState() {
+    super.initState();
+    // 启动定时器以更新显示
+    _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
+      setState(() {});  // 强制更新以显示新时间
+    });
+  }
+
+  @override
+  void dispose() {
+    _timer?.cancel();
+    super.dispose();
+  }
 
   void _handleGesture(BuildContext context, Direction direction) {
     final gameProvider = context.read<GameProvider>();
@@ -85,41 +108,54 @@ class GameBoard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      onVerticalDragEnd: (details) {
-        if (details.velocity.pixelsPerSecond.dy < -250) {
-          _handleGesture(context, Direction.up);
-        } else if (details.velocity.pixelsPerSecond.dy > 250) {
-          _handleGesture(context, Direction.down);
-        }
-      },
-      onHorizontalDragEnd: (details) {
-        if (details.velocity.pixelsPerSecond.dx < -250) {
-          _handleGesture(context, Direction.left);
-        } else if (details.velocity.pixelsPerSecond.dx > 250) {
-          _handleGesture(context, Direction.right);
-        }
-      },
-      child: Consumer<GameProvider>(
-        builder: (context, gameProvider, child) => Container(
-          padding: const EdgeInsets.all(16.0),
-          decoration: BoxDecoration(
-            color: const Color(0xFFBBADA0),
-            borderRadius: BorderRadius.circular(8.0),
-          ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,  // 添加这一行
-            children: List.generate(4, (i) {
-              return Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: List.generate(4, (j) {
-                  return _buildTile(gameProvider.gameLogic.board[i][j]);
-                }),
-              );
-            }),
+    return Column(
+      children: [
+        Consumer<GameProvider>(
+          builder: (context, gameProvider, child) => Text(
+            gameProvider.gameLogic.getFormattedTime(),
+            style: const TextStyle(
+              fontSize: 24,
+              fontWeight: FontWeight.bold,
+            ),
           ),
         ),
-      ),
+        GestureDetector(
+          onVerticalDragEnd: (details) {
+            if (details.velocity.pixelsPerSecond.dy < -250) {
+              _handleGesture(context, Direction.up);
+            } else if (details.velocity.pixelsPerSecond.dy > 250) {
+              _handleGesture(context, Direction.down);
+            }
+          },
+          onHorizontalDragEnd: (details) {
+            if (details.velocity.pixelsPerSecond.dx < -250) {
+              _handleGesture(context, Direction.left);
+            } else if (details.velocity.pixelsPerSecond.dx > 250) {
+              _handleGesture(context, Direction.right);
+            }
+          },
+          child: Consumer<GameProvider>(
+            builder: (context, gameProvider, child) => Container(
+              padding: const EdgeInsets.all(16.0),
+              decoration: BoxDecoration(
+                color: const Color(0xFFBBADA0),
+                borderRadius: BorderRadius.circular(8.0),
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: List.generate(4, (i) {
+                  return Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: List.generate(4, (j) {
+                      return _buildTile(gameProvider.gameLogic.board[i][j]);
+                    }),
+                  );
+                }),
+              ),
+            ),
+          ),
+        ),
+      ],
     );
   }
 }
